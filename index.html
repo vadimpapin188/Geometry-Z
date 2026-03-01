@@ -1,0 +1,185 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Z - официальный сайт</title>
+    <style>
+        /* Стили для внешнего вида сайта */
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: white; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        header { background-color: #2c3e50; padding: 20px 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-top: 50px; display: flex; justify-content: space-between; align-items: center; gap: 20px; width: 80%; max-width: 900px; box-sizing: border-box; }
+        h1 { margin: 0; font-size: 36px; text-transform: uppercase; letter-spacing: 2px; }
+        .header-links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .download-btn { text-decoration: none; background-color: #3498db; color: white; padding: 10px 20px; border-radius: 5px; font-weight: bold; font-size: 14px; transition: background 0.3s; white-space: nowrap; }
+        .download-btn:hover { background-color: #2980b9; }
+
+        .aboutgame, .news, .whatsnew, .userlevels, .community, .addlevel-form { width: 80%; max-width: 800px; margin-top: 40px; background-color: #2c3e50; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); box-sizing: border-box; }
+        h2 { margin-top: 0; text-align: center; color: #f1c40f; }
+        
+        ul { list-style-type: none; padding: 0; }
+        li { background-color: #34495e; margin: 10px 0; padding: 15px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        
+        .level-link { text-decoration: none; background-color: #27ae60; color: white; padding: 8px 15px; border-radius: 4px; font-weight: bold; font-size: 14px; transition: background 0.3s; }
+        .level-link:hover { background-color: #219150; }
+        
+        .search-input, .addlevel-form input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; box-sizing: border-box; font-size: 16px; }
+        
+        .rating-container { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .rating-btn { background: none; border: none; color: white; cursor: pointer; font-size: 18px; transition: transform 0.2s; }
+        .rating-btn:hover { transform: scale(1.2); }
+        .like-btn:hover { color: #2ecc71; }
+        .dislike-btn:hover { color: #e74c3c; }
+        .rating-count { font-weight: bold; font-size: 16px; min-width: 40px; text-align: center; }
+        
+        .add-level-btn { width: 100%; padding: 10px; border-radius: 5px; border: none; background-color: #27ae60; color: white; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .add-level-btn:hover { background-color: #219150; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Geometry Z</h1>
+    <div class="header-links">
+        <a href="#userlevels" class="download-btn">Уровни</a>
+        <a href="#community" class="download-btn">Сообщество</a>
+        <a href="GeometryZ0.1.0.zip" class="download-btn">Скачать</a>
+    </div>
+</header>
+
+<div id="userlevels" class="userlevels">
+    <h2>Уровни сообщества</h2>
+    <input type="text" id="levelSearch" class="search-input" placeholder="🔍 Поиск уровня...">
+    <ul id="levelsList">
+        </ul>
+</div>
+
+<div class="addlevel-form">
+    <h2>Добавить свой уровень</h2>
+    <input type="text" id="newLevelId" placeholder="ID уровня (напр. myxed)">
+    <input type="text" id="newLevelTitle" placeholder="Название уровня">
+    <input type="text" id="newLevelAuthor" placeholder="Автор (Ваше имя)">
+    <input type="text" id="newLevelUrl" placeholder="Ссылка на .zip файл">
+    <button onclick="addNewLevel()" class="add-level-btn">Добавить в список</button>
+</div>
+
+<div id="community" class="community"> 
+    <h2>Сообщество</h2>
+    <div style="background-color: #34495e; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+        <input type="text" id="postAuthor" placeholder="Ваше имя" style="padding: 10px; width: 30%; border-radius: 5px; border: none; box-sizing: border-box;">
+        <input type="text" id="postText" placeholder="Напишите..." style="padding: 10px; width: 45%; border-radius: 5px; border: none; box-sizing: border-box;">
+        <button onclick="addPost()" style="padding: 10px; border-radius: 5px; border: none; background-color: #3498db; color: white; cursor: pointer;">Отправить</button>
+    </div>
+    <ul id="postsList">
+        </ul>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA9dy4vpA5xOad4f0VL9puYn3n8jb7eE3c",
+        authDomain: "geometry-z.firebaseapp.com",
+        projectId: "geometry-z",
+        storageBucket: "geometry-z.firebasestorage.app",
+        messagingSenderId: "270762668732",
+        appId: "1:270762668732:web:b0903a2d822730e1ca16b9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // --- ЛОГИКА ДЛЯ ПОСТОВ ---
+    window.addPost = async function() {
+        const author = document.getElementById('postAuthor').value;
+        const text = document.getElementById('postText').value;
+        if (author && text) {
+            await addDoc(collection(db, "posts"), { author, text, timestamp: new Date() });
+            document.getElementById('postText').value = '';
+        }
+    }
+
+    onSnapshot(query(collection(db, "posts"), orderBy("timestamp", "desc")), (snapshot) => {
+        const postsList = document.getElementById('postsList');
+        postsList.innerHTML = '';
+        snapshot.forEach((doc) => {
+            const post = doc.data();
+            const li = document.createElement('li');
+            li.style.borderLeft = "4px solid #3498db";
+            li.innerHTML = `<strong>${post.author}</strong>: ${post.text}`;
+            postsList.appendChild(li);
+        });
+    });
+
+    // --- ЛОГИКА ДЛЯ УРОВНЕЙ И ЛАЙКОВ ---
+    window.rateLevel = async function(levelId, change) {
+        const levelRef = doc(db, "levels", levelId);
+        await updateDoc(levelRef, { likes: increment(change) });
+    }
+
+    // Добавление нового уровня через форму
+    window.addNewLevel = async function() {
+        const id = document.getElementById('newLevelId').value;
+        const title = document.getElementById('newLevelTitle').value;
+        const author = document.getElementById('newLevelAuthor').value;
+        const url = document.getElementById('newLevelUrl').value;
+
+        if (id && title && author && url) {
+            try {
+                await setDoc(doc(db, "levels", id), {
+                    title: title,
+                    author: author,
+                    zipUrl: url,
+                    likes: 0
+                });
+                alert("Уровень добавлен!");
+                // Очистка полей
+                document.getElementById('newLevelId').value = '';
+                document.getElementById('newLevelTitle').value = '';
+                document.getElementById('newLevelAuthor').value = '';
+                document.getElementById('newLevelUrl').value = '';
+            } catch (e) {
+                console.error("Ошибка: ", e);
+            }
+        } else {
+            alert("Заполните все поля!");
+        }
+    }
+
+    // Отображение уровней из Firestore
+    onSnapshot(collection(db, "levels"), (snapshot) => {
+        const levelsList = document.getElementById('levelsList');
+        levelsList.innerHTML = '';
+        
+        let levelsArray = [];
+        snapshot.forEach((doc) => {
+            levelsArray.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Сортировка по лайкам (убывание)
+        levelsArray.sort((a, b) => b.likes - a.likes);
+
+        levelsArray.forEach(level => {
+            const li = document.createElement('li');
+            li.className = 'level-item';
+            
+            li.innerHTML = `
+                <div style="flex-grow: 1;">
+                    <strong>${level.title}</strong> | От: ${level.author}
+                    <div class="rating-container">
+                        <button class="rating-btn like-btn" onclick="rateLevel('${level.id}', 1)">👍</button>
+                        <span class="rating-count" id="${level.id}-count">${level.likes}</span>
+                        <button class="rating-btn dislike-btn" onclick="rateLevel('${level.id}', -1)">👎</button>
+                    </div>
+                </div>
+                <a href="${level.zipUrl}" class="level-link">Скачать</a>
+            `;
+            levelsList.appendChild(li);
+        });
+    });
+</script>
+
+</body>
+</html>
